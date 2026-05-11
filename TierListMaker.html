@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tier List Studio — Rank Anything</title>
+
+<!-- Fonts: Archivo Black for display, JetBrains Mono for body/UI -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0a0d;
+    --bg-grid: #14141a;
+    --panel: #16161c;
+    --panel-2: #1e1e26;
+    --panel-3: #25252e;
+    --ink: #f4f0e8;
+    --ink-dim: #8a8a93;
+    --ink-faint: #4a4a55;
+    --line: #2a2a33;
+    --line-bright: #3a3a45;
+    --accent: #ff2e2e;
+    --accent-glow: rgba(255, 46, 46, 0.35);
+    --accent-soft: #ffd84d;
+    --accent-cool: #5ae6c5;
+    --shadow-hard: 4px 4px 0 rgba(0,0,0,0.55);
+    --shadow-soft: 0 12px 40px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-image:
+      radial-gradient(ellipse at top, rgba(255, 46, 46, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(90, 230, 197, 0.04) 0%, transparent 50%),
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+    background-position: 0 0, 0 0, -1px -1px, -1px -1px;
+    padding: 24px 20px 60px;
+    overflow-x: hidden;
+  }
+
+  /* Subtle film grain for premium texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.025;
+    z-index: 1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* === HEADER === */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 3px solid var(--ink);
+    padding-bottom: 18px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 18px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .brand-mark {
+    width: 52px;
+    height: 52px;
+    background: var(--accent);
+    display: grid;
+    place-items: center;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 28px;
+    color: var(--bg);
+    box-shadow: var(--shadow-hard);
+    transform: rotate(-2deg);
+    flex-shrink: 0;
+  }
+
+  .brand-text { display: flex; flex-direction: column; gap: 2px; }
+
+  .brand-name {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(22px, 3.2vw, 30px);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+
+  .brand-tag {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .brand-tag .dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--accent-cool);
+    border-radius: 50%;
+    margin: 0 6px 1px 0;
+    vertical-align: middle;
+    box-shadow: 0 0 8px var(--accent-cool);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* === TITLE BLOCK === */
+  .title-block {
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .tier-title {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(38px, 7vw, 72px);
+    line-height: 0.92;
+    letter-spacing: -0.025em;
+    text-transform: uppercase;
+    outline: none;
+    cursor: text;
+    color: var(--ink);
+    word-break: break-word;
+    background: transparent;
+    border: none;
+    width: 100%;
+    font-weight: 400;
+    transition: color 0.2s;
+  }
+  .tier-title:hover { color: var(--accent-soft); }
+  .tier-title:focus { color: var(--accent-soft); }
+  .tier-title:empty::before {
+    content: "Untitled Tier List";
+    color: var(--ink-faint);
+  }
+
+  .tier-subtitle {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: clamp(15px, 1.8vw, 19px);
+    color: var(--ink-dim);
+    outline: none;
+    cursor: text;
+    word-break: break-word;
+    margin-top: 2px;
+    transition: color 0.2s;
+  }
+  .tier-subtitle:hover, .tier-subtitle:focus { color: var(--ink); }
+  .tier-subtitle:empty::before {
+    content: "Add a subtitle or description...";
+    color: var(--ink-faint);
+  }
+
+  /* === BUTTONS === */
+  button {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 11px 15px;
+    background: var(--ink);
+    color: var(--bg);
+    border: 2px solid var(--ink);
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+    position: relative;
+    white-space: nowrap;
+  }
+  button:hover {
+    background: var(--accent);
+    color: var(--ink);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-glow), 3px 3px 0 rgba(0,0,0,0.4);
+  }
+  button:active { transform: translate(1px, 1px); box-shadow: none; }
+
+  button.btn-secondary {
+    background: transparent;
+    color: var(--ink);
+  }
+  button.btn-secondary:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  button.btn-ghost {
+    background: transparent;
+    color: var(--ink-dim);
+    border-color: var(--line);
+  }
+  button.btn-ghost:hover { color: var(--accent); border-color: var(--accent); background: transparent; }
+
+  button.btn-accent {
+    background: var(--accent-soft);
+    color: var(--bg);
+    border-color: var(--accent-soft);
+  }
+  button.btn-accent:hover {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+
+  button[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* === TIER LIST === */
+  #tier-list {
+    border: 3px solid var(--ink);
+    background: var(--panel);
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-hard);
+  }
+
+  .tier-row {
+    display: flex;
+    min-height: 100px;
+    border-bottom: 3px solid var(--ink);
+    animation: tierIn 0.25s ease-out;
+  }
+  .tier-row:last-child { border-bottom: none; }
+
+  @keyframes tierIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .tier-label {
+    width: 120px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 46px;
+    line-height: 1;
+    color: #111;
+    text-align: center;
+    padding: 8px 6px;
+    cursor: text;
+    word-break: break-word;
+    border-right: 3px solid var(--ink);
+    user-select: text;
+    outline: none;
+    text-shadow: 1px 1px 0 rgba(255,255,255,0.15);
+    position: relative;
+  }
+  .tier-label:focus {
+    box-shadow: inset 0 0 0 3px var(--bg);
+  }
+
+  .tier-content {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    align-content: flex-start;
+    padding: 8px;
+    background: var(--panel-2);
+    gap: 5px;
+    min-height: 100px;
+    transition: background 0.18s, box-shadow 0.18s;
+    position: relative;
+  }
+  .tier-content.drag-over {
+    background: #2c2c35;
+    box-shadow: inset 0 0 0 2px var(--accent-soft);
+  }
+
+  .tier-content:empty::after {
+    content: "Drop images here";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--ink-faint);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+
+  .tier-actions {
+    width: 80px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px;
+    border-left: 3px solid var(--ink);
+  }
+
+  .tier-actions button {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-size: 13px;
+    background: var(--panel-2);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    letter-spacing: 0;
+  }
+  .tier-actions button:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-glow);
+  }
+
+  .tier-actions input[type="color"] {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--line);
+    background: transparent;
+    cursor: pointer;
+    padding: 2px;
+    transition: border-color 0.15s;
+  }
+  .tier-actions input[type="color"]:hover { border-color: var(--accent-soft); }
+
+  /* === IMAGES === */
+  .tier-image {
+    position: relative;
+    width: 82px;
+    height: 82px;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-drag: element;
+    border: 2px solid #000;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    background: #2a2a30;
+    overflow: hidden;
+    flex-shrink: 0;
+    animation: imgIn 0.2s ease-out;
+  }
+  @keyframes imgIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .tier-image:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.55), 0 0 0 1px var(--accent-soft);
+    z-index: 2;
+  }
+  .tier-image.dragging {
+    opacity: 0.3;
+    cursor: grabbing;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .tier-image > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+
+  .img-delete {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    border: 1.5px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .tier-image:hover .img-delete { opacity: 1; }
+  .img-delete:hover { background: var(--accent); border-color: var(--accent); box-shadow: none; }
+
+  /* === IMAGE POOL === */
+  #image-pool {
+    border: 3px solid var(--ink);
+    background: var(--panel);
+    box-shadow: var(--shadow-hard);
+  }
+
+  .pool-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 3px solid var(--ink);
+    background: var(--ink);
+    color: var(--bg);
+  }
+
+  .pool-header h2 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pool-header h2::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    display: inline-block;
+  }
+
+  .pool-header .count {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+  }
+
+  #pool-area {
+    min-height: 130px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 14px;
+    background: var(--panel-2);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  #pool-area:hover { background: #25252c; }
+  #pool-area.drag-over {
+    background: #2c2c35;
+    box-shadow: inset 0 0 0 2px var(--accent-soft);
+  }
+
+  #pool-area:empty::before {
+    content: "↑   Click here or press 'Upload Images' to add photos — then drag onto a tier to rank them.";
+    color: var(--ink-dim);
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 32px 16px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    line-height: 1.8;
+  }
+
+  input[type="file"] { display: none; }
+
+  /* === HELP / FOOTER === */
+  .help {
+    margin-top: 24px;
+    padding: 16px 20px;
+    background: var(--panel);
+    border-left: 4px solid var(--accent);
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--ink-dim);
+  }
+  .help b { color: var(--ink); }
+  .help kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-size: 11px;
+    border-radius: 2px;
+  }
+
+  /* === MODALS === */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 5, 8, 0.85);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: fadeIn 0.18s ease;
+  }
+  .modal-backdrop.open { display: flex; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .modal {
+    background: var(--panel);
+    border: 3px solid var(--ink);
+    max-width: 720px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-soft);
+    animation: slideUp 0.22s cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: var(--ink);
+    color: var(--bg);
+    border-bottom: 3px solid var(--ink);
+  }
+
+  .modal-header h3 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 17px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .modal-close {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    font-size: 16px;
+    background: transparent;
+    color: var(--bg);
+    border: 2px solid var(--bg);
+    letter-spacing: 0;
+  }
+  .modal-close:hover { background: var(--accent); color: var(--ink); border-color: var(--accent); }
+
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .modal-footer {
+    padding: 16px 20px;
+    border-top: 2px solid var(--line);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* Form fields in modal */
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 6px;
+    font-weight: 700;
+  }
+  .field input[type="text"], .field textarea {
+    width: 100%;
+    padding: 11px 13px;
+    background: var(--bg);
+    border: 2px solid var(--line);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input[type="text"]:focus, .field textarea:focus { border-color: var(--accent-soft); }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .field .hint {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+    margin-top: 4px;
+  }
+
+  /* === GALLERY === */
+  .gallery-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ink-dim);
+  }
+  .gallery-empty .icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+  .gallery-empty h4 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 18px;
+    color: var(--ink);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .gallery-empty p { font-size: 12px; line-height: 1.6; }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+
+  .gallery-card {
+    background: var(--panel-2);
+    border: 2px solid var(--line);
+    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .gallery-card:hover {
+    border-color: var(--accent-soft);
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.4);
+  }
+
+  .gallery-thumb {
+    height: 110px;
+    background: var(--bg);
+    border-bottom: 2px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    gap: 2px;
+  }
+  .gallery-thumb-row {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    min-height: 0;
+  }
+  .gallery-thumb-label {
+    width: 22px;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 11px;
+    color: #111;
+    display: grid;
+    place-items: center;
+    align-self: stretch;
+    flex-shrink: 0;
+  }
+  .gallery-thumb-images {
+    flex: 1;
+    display: flex;
+    gap: 2px;
+    overflow: hidden;
+  }
+  .gallery-thumb-images img {
+    width: 18px;
+    height: 18px;
+    object-fit: cover;
+    border: 1px solid #000;
+    flex-shrink: 0;
+  }
+
+  .gallery-card-body {
+    padding: 12px 14px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .gallery-card-title {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: var(--ink);
+    word-break: break-word;
+  }
+  .gallery-card-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+  }
+  .gallery-card-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .gallery-card-actions button {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+
+  .gallery-loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--ink-dim);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* === TOASTS === */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: calc(100vw - 48px);
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 13px 18px;
+    border: 2px solid var(--ink);
+    box-shadow: var(--shadow-hard);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    min-width: 240px;
+    max-width: 380px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: toastIn 0.25s cubic-bezier(0.2, 0.7, 0.3, 1);
+    pointer-events: auto;
+  }
+  .toast.success { background: var(--accent-cool); border-color: var(--accent-cool); }
+  .toast.error { background: var(--accent); border-color: var(--accent); color: var(--ink); }
+  .toast.info { background: var(--accent-soft); border-color: var(--accent-soft); }
+  .toast.leaving { animation: toastOut 0.2s ease forwards; }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes toastOut {
+    to { opacity: 0; transform: translateX(20px); }
+  }
+
+  /* === STATUS BAR === */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    margin-bottom: 16px;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border-bottom: 1px dashed var(--line);
+  }
+  .status-bar .stat { display: flex; gap: 8px; align-items: center; }
+  .status-bar .stat b { color: var(--ink); font-weight: 700; }
+
+  /* Mobile */
+  @media (max-width: 720px) {
+    body { padding: 16px 12px 60px; }
+    .tier-label { width: 76px; font-size: 30px; }
+    .tier-actions { width: 60px; }
+    .tier-actions button, .tier-actions input[type="color"] { width: 26px; height: 26px; font-size: 12px; }
+    .tier-image { width: 62px; height: 62px; }
+    .controls { width: 100%; }
+    .controls button { flex: 1; min-width: 0; padding: 11px 8px; font-size: 10px; }
+    .modal-body { padding: 18px; }
+    .gallery-grid { grid-template-columns: 1fr; }
+    .status-bar { font-size: 9px; }
+    .toast-container { left: 12px; right: 12px; bottom: 12px; }
+    .toast { min-width: 0; width: 100%; max-width: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">T</div>
+      <div class="brand-text">
+        <span class="brand-name">Tier&nbsp;List&nbsp;Studio</span>
+        <span class="brand-tag"><span class="dot"></span>Rank anything · share everything</span>
+      </div>
+    </div>
+    <div class="controls">
+      <button onclick="document.getElementById('file-input').click()" title="Upload images">+ Upload</button>
+      <button class="btn-secondary" onclick="addTier()" title="Add a new tier row">+ Tier</button>
+      <button class="btn-secondary" onclick="openGallery()" title="Browse community tier lists">⌕ Gallery</button>
+      <button class="btn-accent" onclick="openShareModal()" title="Share this tier list to the community">⤴ Share</button>
+      <button class="btn-secondary" onclick="downloadAsImage()" title="Download as PNG">↓ PNG</button>
+    </div>
+  </header>
+
+  <div class="title-block">
+    <div class="tier-title" id="tier-title" contenteditable="true" spellcheck="false"></div>
+    <div class="tier-subtitle" id="tier-subtitle" contenteditable="true" spellcheck="false"></div>
+  </div>
+
+  <div class="status-bar">
+    <div class="stat">📊 <b id="stat-tiers">0</b> tiers · <b id="stat-ranked">0</b> ranked · <b id="stat-pool">0</b> in pool</div>
+    <div class="stat" id="stat-saved">● UNSAVED</div>
+  </div>
+
+  <input type="file" id="file-input" multiple accept="image/*">
+
+  <div id="tier-list"></div>
+
+  <div id="image-pool">
+    <div class="pool-header">
+      <h2>Image Pool</h2>
+      <span class="count" id="pool-count">0 images</span>
+    </div>
+    <div id="pool-area"></div>
+  </div>
+
+  <div class="help">
+    <b>How to use:</b> Click the title at the top to rename your list. <b>Upload images</b> or click the empty pool —
+    then drag photos onto any tier. Drop between two images to insert at that exact spot. Click a tier letter to <b>rename</b> it.
+    Use the color box to recolor. Hover over an image and click <kbd>✕</kbd> to remove.
+    <br><br>
+    <b>Sharing:</b> Click <kbd>⤴ Share</kbd> to publish your list to the community gallery so others can use it.
+    Browse what others have shared with <kbd>⌕ Gallery</kbd>. Download a final PNG anytime with <kbd>↓ PNG</kbd>.
+  </div>
+
+</div>
+
+<!-- === MODALS === -->
+
+<!-- Share Modal -->
+<div class="modal-backdrop" id="share-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>⤴ Share to Community</h3>
+      <button class="modal-close" onclick="closeModal('share-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size: 12px; color: var(--ink-dim); margin-bottom: 18px; line-height: 1.6;">
+        Publish your tier list to the community gallery. Anyone using this app will be able to browse and load it.
+        Images are compressed and stored together with your tier structure.
+      </p>
+      <div class="field">
+        <label for="share-title">Title</label>
+        <input type="text" id="share-title" maxlength="80" placeholder="e.g. Best Pizza Toppings 2026">
+      </div>
+      <div class="field">
+        <label for="share-author">Your Name (optional)</label>
+        <input type="text" id="share-author" maxlength="40" placeholder="Anonymous">
+      </div>
+      <div class="field">
+        <label for="share-desc">Description (optional)</label>
+        <textarea id="share-desc" maxlength="200" placeholder="Tell others what this list is about..."></textarea>
+        <div class="hint" id="share-size-hint">—</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('share-modal')">Cancel</button>
+      <button class="btn-accent" id="share-confirm-btn" onclick="confirmShare()">⤴ Publish</button>
+    </div>
+  </div>
+</div>
+
+<!-- Gallery Modal -->
+<div class="modal-backdrop" id="gallery-modal">
+  <div class="modal" style="max-width: 920px;">
+    <div class="modal-header">
+      <h3>⌕ Community Gallery</h3>
+      <button class="modal-close" onclick="closeModal('gallery-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="gallery-body">
+      <div class="gallery-loading"><span class="spinner"></span>Loading shared lists…</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="refreshGallery()">↻ Refresh</button>
+      <button class="btn-secondary" onclick="closeModal('gallery-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-backdrop" id="confirm-modal">
+  <div class="modal" style="max-width: 460px;">
+    <div class="modal-header">
+      <h3 id="confirm-title">Confirm</h3>
+      <button class="modal-close" onclick="closeModal('confirm-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-message" style="font-size: 13px; line-height: 1.6; color: var(--ink);"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="confirmCancel()">Cancel</button>
+      <button id="confirm-ok-btn" onclick="confirmOk()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+/* ============================================================
+   TIER LIST STUDIO — premium upgrade
+   Single-file vanilla JS, plus persistent storage for sharing.
+   ============================================================ */
+
+const DEFAULT_TIERS = [
+  { name: 'S', color: '#ff5e5e' },
+  { name: 'A', color: '#ffa657' },
+  { name: 'B', color: '#ffd84d' },
+  { name: 'C', color: '#a6e36b' },
+  { name: 'D', color: '#5ac8fa' },
+  { name: 'F', color: '#9b8cff' }
+];
+
+let tierIdCounter = 0;
+let imageIdCounter = 0;
+const storage = window.storage; // may be undefined outside artifact context
+
+/* ---------- INITIALIZE ---------- */
+window.addEventListener('DOMContentLoaded', () => {
+  DEFAULT_TIERS.forEach(t => addTier(t.name, t.color));
+  setupPoolDropZone();
+  document.getElementById('file-input').addEventListener('change', handleUpload);
+
+  document.getElementById('pool-area').addEventListener('click', e => {
+    if (e.target.id === 'pool-area') document.getElementById('file-input').click();
+  });
+
+  // Title hooks - update stat bar on edit
+  ['tier-title', 'tier-subtitle'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', updateStats);
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+    });
+  });
+
+  // Close modal on backdrop click
+  document.querySelectorAll('.modal-backdrop').forEach(m => {
+    m.addEventListener('click', e => {
+      if (e.target === m) m.classList.remove('open');
+    });
+  });
+
+  // Close any open modal with Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open'));
+    }
+  });
+
+  if (!storage) {
+    showToast('Sharing requires running inside Claude — storage API unavailable here.', 'info', 6000);
+  }
+
+  updateStats();
+});
+
+/* ---------- TIERS ---------- */
+function addTier(name = 'New', color = '#cccccc') {
+  const tierId = 'tier-' + (++tierIdCounter);
+  const tierList = document.getElementById('tier-list');
+
+  const row = document.createElement('div');
+  row.className = 'tier-row';
+  row.id = tierId;
+
+  const label = document.createElement('div');
+  label.className = 'tier-label';
+  label.contentEditable = 'true';
+  label.spellcheck = false;
+  label.style.background = color;
+  label.textContent = name;
+  label.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); label.blur(); }
+  });
+
+  const content = document.createElement('div');
+  content.className = 'tier-content';
+
+  const actions = document.createElement('div');
+  actions.className = 'tier-actions';
+
+  const colorPicker = document.createElement('input');
+  colorPicker.type = 'color';
+  colorPicker.value = color;
+  colorPicker.title = 'Change tier color';
+  colorPicker.addEventListener('input', e => label.style.background = e.target.value);
+
+  const upBtn = makeIconBtn('▲', 'Move tier up', () => moveTier(tierId, -1));
+  const downBtn = makeIconBtn('▼', 'Move tier down', () => moveTier(tierId, 1));
+  const delBtn = makeIconBtn('✕', 'Delete tier', () => deleteTier(tierId));
+  delBtn.classList.add('del-btn');
+
+  actions.append(colorPicker, upBtn, downBtn, delBtn);
+  row.append(label, content, actions);
+  tierList.appendChild(row);
+
+  setupTierDropZone(content);
+  updateStats();
+}
+
+function makeIconBtn(text, title, onClick) {
+  const b = document.createElement('button');
+  b.textContent = text;
+  b.title = title;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+function moveTier(tierId, direction) {
+  const row = document.getElementById(tierId);
+  if (!row) return;
+  if (direction === -1 && row.previousElementSibling) {
+    row.parentNode.insertBefore(row, row.previousElementSibling);
+  } else if (direction === 1 && row.nextElementSibling) {
+    row.parentNode.insertBefore(row.nextElementSibling, row);
+  }
+}
+
+function deleteTier(tierId) {
+  const row = document.getElementById(tierId);
+  if (!row) return;
+  const imgs = row.querySelectorAll('.tier-image');
+  const pool = document.getElementById('pool-area');
+  imgs.forEach(img => pool.appendChild(img));
+  row.remove();
+  updatePoolCount();
+  updateStats();
+}
+
+/* ---------- IMAGE UPLOAD ---------- */
+function handleUpload(event) {
+  const files = Array.from(event.target.files);
+  const pool = document.getElementById('pool-area');
+
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = createImage(e.target.result, file.name);
+      pool.appendChild(img);
+      updatePoolCount();
+      updateStats();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  event.target.value = '';
+}
+
+function createImage(src, alt) {
+  const wrap = document.createElement('div');
+  wrap.className = 'tier-image';
+  wrap.draggable = true;
+  wrap.id = 'img-' + (++imageIdCounter);
+
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = alt || '';
+  img.title = alt || '';
+  img.draggable = false;
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'img-delete';
+  delBtn.textContent = '✕';
+  delBtn.title = 'Remove image';
+  delBtn.draggable = false;
+  delBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    wrap.remove();
+    updatePoolCount();
+    updateStats();
+  });
+  delBtn.addEventListener('mousedown', e => e.stopPropagation());
+
+  wrap.append(img, delBtn);
+
+  wrap.addEventListener('dragstart', e => {
+    wrap.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', wrap.id); } catch (_) {}
+  });
+
+  wrap.addEventListener('dragend', () => {
+    wrap.classList.remove('dragging');
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    updatePoolCount();
+    updateStats();
+  });
+
+  return wrap;
+}
+
+/* ---------- DROP ZONES ---------- */
+function setupTierDropZone(zone) {
+  zone.addEventListener('dragover', handleDragOver);
+  zone.addEventListener('dragleave', e => {
+    if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over');
+  });
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); });
+}
+
+function setupPoolDropZone() {
+  const pool = document.getElementById('pool-area');
+  pool.addEventListener('dragover', handleDragOver);
+  pool.addEventListener('dragleave', e => {
+    if (!pool.contains(e.relatedTarget)) pool.classList.remove('drag-over');
+  });
+  pool.addEventListener('drop', e => { e.preventDefault(); pool.classList.remove('drag-over'); });
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const zone = e.currentTarget;
+  zone.classList.add('drag-over');
+
+  const dragging = document.querySelector('.tier-image.dragging');
+  if (!dragging) return;
+
+  const after = getDragAfterElement(zone, e.clientX, e.clientY);
+  if (after == null) {
+    zone.appendChild(dragging);
+  } else if (after !== dragging) {
+    zone.insertBefore(dragging, after);
+  }
+}
+
+function getDragAfterElement(container, x, y) {
+  const items = [...container.querySelectorAll('.tier-image:not(.dragging)')];
+  if (items.length === 0) return null;
+
+  let closest = null;
+  let closestDist = Number.POSITIVE_INFINITY;
+
+  for (const item of items) {
+    const box = item.getBoundingClientRect();
+    const cx = box.left + box.width / 2;
+    const cy = box.top + box.height / 2;
+    const dist = Math.hypot(x - cx, y - cy);
+    if (dist < closestDist) { closestDist = dist; closest = item; }
+  }
+
+  if (!closest) return null;
+
+  const box = closest.getBoundingClientRect();
+  const cx = box.left + box.width / 2;
+  return (x < cx) ? closest : closest.nextElementSibling;
+}
+
+/* ---------- POOL COUNT / STATS ---------- */
+function updatePoolCount() {
+  const n = document.getElementById('pool-area').querySelectorAll('.tier-image').length;
+  document.getElementById('pool-count').textContent = n + (n === 1 ? ' image' : ' images');
+}
+
+function updateStats() {
+  const tiers = document.querySelectorAll('.tier-row').length;
+  const ranked = document.querySelectorAll('.tier-content .tier-image').length;
+  const pool = document.querySelectorAll('#pool-area .tier-image').length;
+  document.getElementById('stat-tiers').textContent = tiers;
+  document.getElementById('stat-ranked').textContent = ranked;
+  document.getElementById('stat-pool').textContent = pool;
+  updatePoolCount();
+}
+
+/* ---------- DOWNLOAD AS PNG ---------- */
+async function downloadAsImage() {
+  const tierRows = document.querySelectorAll('.tier-row');
+  if (tierRows.length === 0) { showToast('Add at least one tier first.', 'error'); return; }
+
+  // 2x DPI for crisp output
+  const DPR = 2;
+  const TOTAL_W = 1200;
+  const LABEL_W = 140;
+  const IMG_SIZE = 90;
+  const GAP = 5;
+  const PAD = 12;
+  const SEP = 3;
+  const MIN_ROW_H = 110;
+  const TITLE_H = 110;
+  const FOOTER_H = 40;
+  const CONTENT_W = TOTAL_W - LABEL_W;
+  const IMAGES_PER_ROW = Math.max(1, Math.floor((CONTENT_W - 2 * PAD + GAP) / (IMG_SIZE + GAP)));
+
+  // Pre-compute row heights
+  const rows = [];
+  let totalRowsH = 0;
+  tierRows.forEach(row => {
+    const label = row.querySelector('.tier-label');
+    const imgs = row.querySelectorAll('.tier-image');
+    const subRows = Math.max(1, Math.ceil(imgs.length / IMAGES_PER_ROW));
+    const h = Math.max(MIN_ROW_H, subRows * (IMG_SIZE + GAP) - GAP + 2 * PAD);
+    rows.push({
+      text: label.textContent,
+      color: getComputedStyle(label).backgroundColor,
+      images: Array.from(imgs).map(wrap => wrap.querySelector('img').src),
+      h
+    });
+    totalRowsH += h;
+  });
+  totalRowsH += SEP * (rows.length - 1);
+
+  const title = (document.getElementById('tier-title').textContent || 'Untitled Tier List').trim();
+  const subtitle = (document.getElementById('tier-subtitle').textContent || '').trim();
+  const totalH = TITLE_H + totalRowsH + FOOTER_H;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = TOTAL_W * DPR;
+  canvas.height = totalH * DPR;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  // Background
+  ctx.fillStyle = '#0a0a0d';
+  ctx.fillRect(0, 0, TOTAL_W, totalH);
+
+  // Title section
+  ctx.fillStyle = '#f4f0e8';
+  ctx.font = 'bold 38px "Archivo Black", Impact, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(title.toUpperCase(), 20, 50);
+  if (subtitle) {
+    ctx.fillStyle = '#8a8a93';
+    ctx.font = 'italic 17px "Instrument Serif", serif';
+    ctx.fillText(subtitle, 20, 78);
+  }
+
+  // Divider
+  ctx.fillStyle = '#f4f0e8';
+  ctx.fillRect(20, TITLE_H - 18, TOTAL_W - 40, 2);
+
+  // Tier list block with black border
+  const tierY = TITLE_H;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, tierY, TOTAL_W, totalRowsH);
+
+  // Pre-load images
+  const allSrcs = rows.flatMap(r => r.images);
+  const loaded = await Promise.all(allSrcs.map(src => new Promise(res => {
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = () => res(null);
+    im.src = src;
+  })));
+
+  // Draw rows
+  let y = tierY;
+  let imgIdx = 0;
+  for (const row of rows) {
+    ctx.fillStyle = row.color;
+    ctx.fillRect(0, y, LABEL_W, row.h);
+
+    ctx.fillStyle = '#111';
+    ctx.font = 'bold 46px "Archivo Black", Impact, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(row.text, LABEL_W / 2, y + row.h / 2);
+
+    ctx.fillStyle = '#1e1e26';
+    ctx.fillRect(LABEL_W, y, CONTENT_W, row.h);
+
+    for (let i = 0; i < row.images.length; i++) {
+      const im = loaded[imgIdx++];
+      if (!im) continue;
+      const col = i % IMAGES_PER_ROW;
+      const sub = Math.floor(i / IMAGES_PER_ROW);
+      const ix = LABEL_W + PAD + col * (IMG_SIZE + GAP);
+      const iy = y + PAD + sub * (IMG_SIZE + GAP);
+      // Draw with black border
+      ctx.fillStyle = '#000';
+      ctx.fillRect(ix - 2, iy - 2, IMG_SIZE + 4, IMG_SIZE + 4);
+      ctx.drawImage(im, ix, iy, IMG_SIZE, IMG_SIZE);
+    }
+    y += row.h + SEP;
+  }
+
+  // Footer watermark
+  ctx.fillStyle = '#4a4a55';
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('made with TIER LIST STUDIO', TOTAL_W - 20, totalH - FOOTER_H / 2);
+
+  // Save
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (title.replace(/[^a-z0-9-_]+/gi, '_') || 'tierlist') + '.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast('PNG downloaded — ' + a.download, 'success');
+  }, 'image/png');
+}
+
+/* ============================================================
+   COMMUNITY GALLERY — share / browse / load
+   Uses window.storage with shared: true
+   ============================================================ */
+
+/* ---------- IMAGE COMPRESSION ---------- */
+async function compressImage(dataUrl, maxDim = 220, quality = 0.78) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      const scale = Math.min(1, maxDim / Math.max(width, height));
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+      const c = document.createElement('canvas');
+      c.width = width; c.height = height;
+      const cx = c.getContext('2d');
+      cx.imageSmoothingQuality = 'high';
+      cx.drawImage(img, 0, 0, width, height);
+      try {
+        resolve(c.toDataURL('image/jpeg', quality));
+      } catch (_) { resolve(dataUrl); }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+/* ---------- SERIALIZE CURRENT LIST ---------- */
+async function serializeList() {
+  const tiers = [];
+  document.querySelectorAll('.tier-row').forEach(row => {
+    const label = row.querySelector('.tier-label');
+    const color = rgbToHex(getComputedStyle(label).backgroundColor);
+    const images = Array.from(row.querySelectorAll('.tier-image > img')).map(im => im.src);
+    tiers.push({ name: label.textContent, color, images });
+  });
+  const poolImages = Array.from(document.querySelectorAll('#pool-area .tier-image > img')).map(im => im.src);
+
+  // Compress all images in parallel
+  const compressedTiers = await Promise.all(tiers.map(async t => ({
+    name: t.name,
+    color: t.color,
+    images: await Promise.all(t.images.map(src => compressImage(src)))
+  })));
+  const compressedPool = await Promise.all(poolImages.map(src => compressImage(src)));
+
+  return { tiers: compressedTiers, pool: compressedPool };
+}
+
+function rgbToHex(rgb) {
+  const m = rgb.match(/\d+/g);
+  if (!m) return '#cccccc';
+  return '#' + m.slice(0, 3).map(n => Number(n).toString(16).padStart(2, '0')).join('');
+}
+
+/* ---------- SHARE MODAL ---------- */
+function openShareModal() {
+  if (!storage) {
+    showToast('Sharing requires running inside Claude (storage unavailable here).', 'error', 5000);
+    return;
+  }
+  const tiers = document.querySelectorAll('.tier-row').length;
+  const ranked = document.querySelectorAll('.tier-content .tier-image').length;
+  if (tiers === 0) { showToast('Add at least one tier before sharing.', 'error'); return; }
+  if (ranked === 0) { showToast('Rank at least one image before sharing.', 'error'); return; }
+
+  const title = (document.getElementById('tier-title').textContent || '').trim();
+  document.getElementById('share-title').value = title;
+  document.getElementById('share-author').value = '';
+  document.getElementById('share-desc').value = '';
+  document.getElementById('share-size-hint').textContent = '—';
+  document.getElementById('share-modal').classList.add('open');
+  setTimeout(() => document.getElementById('share-title').focus(), 50);
+}
+
+async function confirmShare() {
+  const titleInput = document.getElementById('share-title');
+  const title = titleInput.value.trim();
+  if (!title) { showToast('Give your list a title first.', 'error'); titleInput.focus(); return; }
+
+  const author = document.getElementById('share-author').value.trim() || 'Anonymous';
+  const description = document.getElementById('share-desc').value.trim();
+
+  const btn = document.getElementById('share-confirm-btn');
+  btn.disabled = true;
+  btn.textContent = 'Compressing…';
+  document.getElementById('share-size-hint').textContent = 'Compressing images, please wait…';
+
+  try {
+    const { tiers, pool } = await serializeList();
+    const id = 'tl-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+    const createdAt = Date.now();
+
+    const fullData = {
+      id, title, author, description, createdAt,
+      tiers, pool,
+      version: 1
+    };
+
+    // Count images for metadata
+    const imageCount = tiers.reduce((s, t) => s + t.images.length, 0) + pool.length;
+
+    // Build a small thumbnail preview (first image from each tier, max ~5 tiers)
+    const thumbTiers = tiers.slice(0, 5).map(t => ({
+      name: t.name,
+      color: t.color,
+      images: t.images.slice(0, 4) // up to 4 images per tier in the thumbnail
+    }));
+
+    const metaData = {
+      id, title, author, description, createdAt,
+      imageCount, tierCount: tiers.length,
+      thumb: thumbTiers
+    };
+
+    const dataJson = JSON.stringify(fullData);
+    const metaJson = JSON.stringify(metaData);
+    const sizeMB = (dataJson.length / 1024 / 1024).toFixed(2);
+    document.getElementById('share-size-hint').textContent = `Payload: ${sizeMB} MB — uploading…`;
+    btn.textContent = 'Uploading…';
+
+    if (dataJson.length > 4.8 * 1024 * 1024) {
+      throw new Error(`Too large (${sizeMB} MB). The 5 MB limit was exceeded — try fewer or smaller images.`);
+    }
+
+    await storage.set(`gallery:data:${id}`, dataJson, true);
+    await storage.set(`gallery:meta:${id}`, metaJson, true);
+
+    closeModal('share-modal');
+    showToast(`Shared "${title}" to the community gallery 🎉`, 'success', 4000);
+  } catch (err) {
+    console.error(err);
+    showToast('Share failed: ' + (err.message || 'unknown error'), 'error', 6000);
+    document.getElementById('share-size-hint').textContent = 'Error — ' + (err.message || 'unknown');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⤴ Publish';
+  }
+}
+
+/* ---------- GALLERY ---------- */
+async function openGallery() {
+  document.getElementById('gallery-modal').classList.add('open');
+  await refreshGallery();
+}
+
+async function refreshGallery() {
+  const body = document.getElementById('gallery-body');
+  body.innerHTML = '<div class="gallery-loading"><span class="spinner"></span>Loading shared lists…</div>';
+
+  if (!storage) {
+    body.innerHTML = `
+      <div class="gallery-empty">
+        <div class="icon">⚠</div>
+        <h4>Storage Unavailable</h4>
+        <p>The community gallery requires running this app inside Claude where the shared storage API is available.</p>
+      </div>`;
+    return;
+  }
+
+  try {
+    const list = await storage.list('gallery:meta:', true);
+    const keys = (list && list.keys) || [];
+
+    if (keys.length === 0) {
+      body.innerHTML = `
+        <div class="gallery-empty">
+          <div class="icon">⌕</div>
+          <h4>Nothing here yet</h4>
+          <p>Be the first to share a tier list with the community.<br>Build one and tap <b>⤴ Share</b>.</p>
+        </div>`;
+      return;
+    }
+
+    const metas = await Promise.all(keys.map(async k => {
+      try {
+        const r = await storage.get(k, true);
+        return r ? JSON.parse(r.value) : null;
+      } catch (_) { return null; }
+    }));
+
+    const valid = metas.filter(m => m && m.id).sort((a, b) => b.createdAt - a.createdAt);
+
+    if (valid.length === 0) {
+      body.innerHTML = `<div class="gallery-empty"><div class="icon">⌕</div><h4>Nothing here yet</h4><p>Be the first to share!</p></div>`;
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'gallery-grid';
+    valid.forEach(m => grid.appendChild(buildGalleryCard(m)));
+    body.innerHTML = '';
+    body.appendChild(grid);
+  } catch (err) {
+    console.error(err);
+    body.innerHTML = `<div class="gallery-empty"><div class="icon">⚠</div><h4>Error loading gallery</h4><p>${escapeHtml(err.message || 'Unknown error')}</p></div>`;
+  }
+}
+
+function buildGalleryCard(meta) {
+  const card = document.createElement('div');
+  card.className = 'gallery-card';
+
+  // Thumb preview
+  const thumb = document.createElement('div');
+  thumb.className = 'gallery-thumb';
+  (meta.thumb || []).forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'gallery-thumb-row';
+    const lbl = document.createElement('div');
+    lbl.className = 'gallery-thumb-label';
+    lbl.style.background = t.color;
+    lbl.textContent = (t.name || '').slice(0, 2);
+    row.appendChild(lbl);
+    const imgs = document.createElement('div');
+    imgs.className = 'gallery-thumb-images';
+    (t.images || []).forEach(src => {
+      const im = document.createElement('img');
+      im.src = src;
+      imgs.appendChild(im);
+    });
+    row.appendChild(imgs);
+    thumb.appendChild(row);
+  });
+  card.appendChild(thumb);
+
+  const body = document.createElement('div');
+  body.className = 'gallery-card-body';
+
+  const title = document.createElement('div');
+  title.className = 'gallery-card-title';
+  title.textContent = meta.title || 'Untitled';
+  body.appendChild(title);
+
+  const metaRow = document.createElement('div');
+  metaRow.className = 'gallery-card-meta';
+  metaRow.innerHTML = `
+    <span>by ${escapeHtml(meta.author || 'Anon')}</span>
+    <span>${meta.tierCount || 0} tiers · ${meta.imageCount || 0} imgs</span>
+  `;
+  body.appendChild(metaRow);
+
+  const dateRow = document.createElement('div');
+  dateRow.className = 'gallery-card-meta';
+  dateRow.style.color = 'var(--ink-faint)';
+  dateRow.innerHTML = `<span>${formatDate(meta.createdAt)}</span>`;
+  body.appendChild(dateRow);
+
+  if (meta.description) {
+    const desc = document.createElement('div');
+    desc.style.cssText = 'font-size:11px; color: var(--ink-dim); line-height:1.5; margin-top:2px;';
+    desc.textContent = meta.description.length > 100 ? meta.description.slice(0, 97) + '...' : meta.description;
+    body.appendChild(desc);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'gallery-card-actions';
+
+  const loadBtn = document.createElement('button');
+  loadBtn.textContent = '↓ Use This';
+  loadBtn.addEventListener('click', () => loadGalleryItem(meta.id, meta.title));
+
+  actions.appendChild(loadBtn);
+  body.appendChild(actions);
+
+  card.appendChild(body);
+  return card;
+}
+
+async function loadGalleryItem(id, title) {
+  showConfirm(
+    'Load this list?',
+    `This will replace your current tier list with "${title}". Any unsaved work will be lost.`,
+    async () => {
+      try {
+        const r = await storage.get(`gallery:data:${id}`, true);
+        if (!r) throw new Error('Could not retrieve list data');
+        const data = JSON.parse(r.value);
+        applyLoadedList(data);
+        closeModal('gallery-modal');
+        showToast(`Loaded "${data.title}" by ${data.author}`, 'success', 3500);
+      } catch (err) {
+        console.error(err);
+        showToast('Load failed: ' + (err.message || 'unknown'), 'error');
+      }
+    }
+  );
+}
+
+function applyLoadedList(data) {
+  // Set title/subtitle
+  document.getElementById('tier-title').textContent = data.title || 'Untitled';
+  document.getElementById('tier-subtitle').textContent = data.description || (data.author ? `by ${data.author}` : '');
+
+  // Clear current
+  document.getElementById('tier-list').innerHTML = '';
+  document.getElementById('pool-area').innerHTML = '';
+  tierIdCounter = 0;
+  imageIdCounter = 0;
+
+  // Rebuild tiers
+  (data.tiers || []).forEach(t => {
+    addTier(t.name || 'New', t.color || '#cccccc');
+    // Add images to the last-added tier
+    const row = document.getElementById('tier-' + tierIdCounter);
+    const content = row.querySelector('.tier-content');
+    (t.images || []).forEach(src => content.appendChild(createImage(src, '')));
+  });
+
+  // Rebuild pool
+  const pool = document.getElementById('pool-area');
+  (data.pool || []).forEach(src => pool.appendChild(createImage(src, '')));
+
+  updateStats();
+}
+
+/* ---------- MODALS / TOASTS / CONFIRM ---------- */
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+let _confirmResolve = null;
+function showConfirm(title, message, onOk) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-message').textContent = message;
+  _confirmResolve = onOk;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function confirmOk() {
+  closeModal('confirm-modal');
+  const fn = _confirmResolve;
+  _confirmResolve = null;
+  if (fn) fn();
+}
+function confirmCancel() {
+  closeModal('confirm-modal');
+  _confirmResolve = null;
+}
+
+function showToast(message, type = 'info', duration = 2800) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : '◆';
+  toast.innerHTML = `<span style="font-size:14px;">${icon}</span><span>${escapeHtml(message)}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('leaving');
+    setTimeout(() => toast.remove(), 250);
+  }, duration);
+}
+
+/* ---------- UTIL ---------- */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function formatDate(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const now = Date.now();
+  const diff = now - ts;
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  if (diff < 604800000) return Math.floor(diff/86400000) + 'd ago';
+  return d.toLocaleDateString();
+}
+</script>
+
+</body>
+</html>
